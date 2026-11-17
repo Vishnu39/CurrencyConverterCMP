@@ -9,6 +9,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.junit.JUnitAsserter.assertNotNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConverterViewModelTest {
@@ -41,6 +44,32 @@ class ConverterViewModelTest {
         viewModel.onFromSelected("usd")
         assertEquals(2, repository.rateRequests)
         assertEquals("usd", viewModel.state.value.fromCode)
+    }
+    @Test
+    fun whenLoadingFailsTheErrorIsShownAndLoadingStops() {
+        // Arrange: the fake API fails, like both hosts being down
+        val repository = FailingCurrencyRepository()
+
+        // Act: creating the ViewModel starts refresh() right away
+        val viewModel = ConverterViewModel(repository)
+        val state = viewModel.state.value
+
+        // Assert: the error message is shown and the spinner is gone
+        assertNotNull(state.errorMessage)
+        assertEquals("Could not load rates. Network error", state.errorMessage)
+        assertFalse(state.isLoading)
+        assertFalse(state.ratesLoading)
+    }
+    private class FailingCurrencyRepository : ConverterRepository {
+        override suspend fun loadCurrencies(): List<CurrencyOptions> {
+            throw IllegalStateException("Network error")
+        }
+
+        override suspend fun loadRates(sourceCode: String): CurrencyRates {
+            error("Rates should not be loaded when the currency list fails")
+        }
+
+        override fun close() = Unit
     }
 }
 

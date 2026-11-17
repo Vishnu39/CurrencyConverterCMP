@@ -40,6 +40,9 @@ class ConverterViewModel(private val repository: ConverterRepository): ViewModel
         rates = emptyMap()
         val detail = exception.message?.take(160)?.trim().orEmpty()
         val message = if (detail.isEmpty()) "Could not load rates." else "Could not load rates. $detail"
+       /* _state.update {
+            it.copy(isLoading = false, ratesLoading = false,errorMessage = message)
+        }*/
     }
 
     private fun refresh() {
